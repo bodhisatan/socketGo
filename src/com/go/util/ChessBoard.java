@@ -1,4 +1,4 @@
-package com.go.com.go.util;
+package com.go.util;
 
 public class ChessBoard {
     public static final int N = 15;

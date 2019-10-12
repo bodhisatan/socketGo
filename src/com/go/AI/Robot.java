@@ -1,6 +1,6 @@
 package com.go.AI;
 
-import com.go.com.go.util.ChessBoard;
+import com.go.util.ChessBoard;
 
 import java.util.Random;
 

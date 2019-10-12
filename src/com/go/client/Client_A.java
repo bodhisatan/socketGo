@@ -2,7 +2,7 @@ package com.go.client;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.go.com.go.util.ChessBoard;
+import com.go.util.ChessBoard;
 import com.go.AI.Robot;
 
 import java.io.BufferedReader;
@@ -69,6 +69,10 @@ class ClientThread_A implements Runnable {
                         System.out.println("[log] 本次发送的消息：" + jsonToSend);
                         PrintStream ps = new PrintStream(s.getOutputStream());
                         ps.println(jsonToSend);
+
+                        if (isEnd) {
+                            System.exit(0);
+                        }
 
                     }
 

@@ -10,6 +10,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
@@ -99,7 +100,6 @@ class ServerThread implements Runnable {
                 }
 
                 messageTrans.drawChess(color, x, y);
-                sleep(5000);
 
                 // 游戏结束
                 if (isEnd) {
@@ -114,8 +114,6 @@ class ServerThread implements Runnable {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -147,7 +145,7 @@ public class Server implements ServerThread.MessageTrans {
     @FXML
     Button btnStart;
     @FXML
-    Label clientNum;
+    TextField clientNum;
     @FXML
     Button btnListen;
 
@@ -160,7 +158,6 @@ public class Server implements ServerThread.MessageTrans {
     private double broadPadding = 14;
     private String[] markX = new String[]{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O"};
     private String[] markY = new String[]{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"};
-    private int numOfClient = 0;
 
     public void initialize() {
         btnStart.setDisable(true);
@@ -200,17 +197,23 @@ public class Server implements ServerThread.MessageTrans {
 
     @FXML
     protected void handleStartListen(ActionEvent event) throws IOException {
-        ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
-        while (true) {
-            Socket s = serverSocket.accept();
-            sockets.add(s);
-            numOfClient++;
-            clientNum.setText("当前在线AI数目：" + numOfClient);
-            if (sockets.size() == 2) break;
-        }
-        taContent.appendText("已建立连接\n");
-        btnStart.setDisable(false);
         btnListen.setDisable(true);
+        ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
+        new Thread(() -> {
+            while (true) {
+                Socket s = null;
+                try {
+                    s = serverSocket.accept();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                sockets.add(s);
+                clientNum.setText("当前在线AI数目：" + sockets.size());
+                if (sockets.size() == 2) break;
+            }
+            taContent.appendText("已建立连接\n");
+            btnStart.setDisable(false);
+        }).start();
     }
 
     @FXML

@@ -31,7 +31,8 @@
     <children>
         <Canvas fx:id="canvas" height="500.0" width="500.0" GridPane.hgrow="ALWAYS" GridPane.rowSpan="5"/>
         <Label fx:id="serverIP" prefWidth="200.0" text="本机IP：127.0.0.1" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-        <Label fx:id="clientNum" prefWidth="200.0" text="当前在线AI数目：0" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+        <TextField fx:id="clientNum" editable="false" prefWidth="200.0" text="当前在线AI数目：0" GridPane.columnIndex="2"
+                   GridPane.rowIndex="1"/>
         <TextArea fx:id="taContent" editable="false" prefHeight="371.0" prefWidth="200.0" scrollLeft="2.0"
                   scrollTop="2.0" wrapText="true" GridPane.columnIndex="1" GridPane.columnSpan="2"
                   GridPane.hgrow="ALWAYS" GridPane.rowIndex="3"/>

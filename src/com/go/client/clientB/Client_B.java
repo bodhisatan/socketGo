@@ -23,17 +23,24 @@ import static com.go.client.clientB.Client_B.*;
  */
 
 class ClientThread_B implements Runnable {
-    ChessBoard chessBoard = new ChessBoard();
-    Robot robot;
+    private ChessBoard chessBoard = new ChessBoard();
+    private Robot robot;
     private Socket s;
-    BufferedReader br = null;
-    boolean flag;
-    int myColor;
+    private BufferedReader br = null;
+    private boolean flag;
+    private int myColor;
+    private MessageTrans ms;
 
-    public ClientThread_B(Socket s) throws IOException {
+    ClientThread_B(Socket s, MessageTrans messageTrans) throws IOException {
         this.s = s;
         br = new BufferedReader(new InputStreamReader(s.getInputStream()));
         flag = true;
+        ms = messageTrans;
+    }
+
+    public interface MessageTrans {
+        // 发送内容给前端显示
+        void sendMessage(String message);
     }
 
     @Override
@@ -50,6 +57,7 @@ class ClientThread_B implements Runnable {
         try {
             while ((content = br.readLine()) != null) {
                 System.out.println("[log] 本次接收到的消息：" + content);
+                ms.sendMessage("[log] 本次接收到的消息：" + content + "\n");
 
                 if (content.equals("Start")) {
 
@@ -68,6 +76,7 @@ class ClientThread_B implements Runnable {
                         jsonObject.put("color", myColor);
                         jsonObject.put("isEnd", false);
                         System.out.println("[log] 本次发送的消息：" + jsonObject);
+                        ms.sendMessage("[log] 本次发送的消息：" + jsonObject + "\n");
                         ps.println(jsonObject);
 
                     } else {
@@ -85,7 +94,7 @@ class ClientThread_B implements Runnable {
                         boolean isEnd = jsonFromServer.getBooleanValue("isEnd");
 
                         if (isEnd) {
-                            System.exit(0);
+                            break;
                         }
 
                         chessBoard.makeMove(x, y, color);
@@ -101,11 +110,12 @@ class ClientThread_B implements Runnable {
                         jsonToSend.put("color", myColor);
                         jsonToSend.put("isEnd", isEnd);
                         System.out.println("[log] 本次发送的消息：" + jsonToSend);
+                        ms.sendMessage("[log] 本次发送的消息：" + jsonToSend + "\n");
                         PrintStream ps = new PrintStream(s.getOutputStream());
                         ps.println(jsonToSend);
 
                         if (isEnd) {
-                            System.exit(0);
+                            break;
                         }
 
                     }
@@ -119,9 +129,9 @@ class ClientThread_B implements Runnable {
     }
 }
 
-public class Client_B {
+public class Client_B implements ClientThread_B.MessageTrans {
     private static final int SERVER_PORT = 60000;
-    public static String clientName;
+    static String clientName;
 
     @FXML
     TextArea logContent;
@@ -137,6 +147,11 @@ public class Client_B {
         clientName = name.getText();
 
         Socket s = new Socket(serverIP.getText(), SERVER_PORT);
-        new Thread(new ClientThread_B(s)).start();
+        new Thread(new ClientThread_B(s, this)).start();
+    }
+
+    @Override
+    public void sendMessage(String message) {
+        logContent.appendText(message);
     }
 }

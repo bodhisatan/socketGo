@@ -6,9 +6,7 @@ import com.go.util.ChessBoard;
 import com.go.AI.Robot;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 
@@ -25,17 +23,24 @@ import static com.go.client.clientA.Client_A.*;
  */
 
 class ClientThread_A implements Runnable {
-    ChessBoard chessBoard = new ChessBoard();
-    Robot robot;
+    private ChessBoard chessBoard = new ChessBoard();
+    private Robot robot;
     private Socket s;
-    BufferedReader br = null;
-    boolean flag;
-    int myColor;
+    private BufferedReader br = null;
+    private boolean flag;
+    private int myColor;
+    private MessageTrans ms;
 
-    public ClientThread_A(Socket s) throws IOException {
+    ClientThread_A(Socket s, MessageTrans messageTrans) throws IOException {
         this.s = s;
         br = new BufferedReader(new InputStreamReader(s.getInputStream()));
         flag = true;
+        ms = messageTrans;
+    }
+
+    public interface MessageTrans {
+        // 发送内容给前端显示
+        void sendMessage(String message);
     }
 
     @Override
@@ -52,6 +57,7 @@ class ClientThread_A implements Runnable {
         try {
             while ((content = br.readLine()) != null) {
                 System.out.println("[log] 本次接收到的消息：" + content);
+                ms.sendMessage("[log] 本次接收到的消息：" + content + "\n");
 
                 if (content.equals("Start")) {
 
@@ -70,6 +76,7 @@ class ClientThread_A implements Runnable {
                         jsonObject.put("color", myColor);
                         jsonObject.put("isEnd", false);
                         System.out.println("[log] 本次发送的消息：" + jsonObject);
+                        ms.sendMessage("[log] 本次发送的消息：" + jsonObject + "\n");
                         ps.println(jsonObject);
 
                     } else {
@@ -87,7 +94,7 @@ class ClientThread_A implements Runnable {
                         boolean isEnd = jsonFromServer.getBooleanValue("isEnd");
 
                         if (isEnd) {
-                            System.exit(0);
+                            break;
                         }
 
                         chessBoard.makeMove(x, y, color);
@@ -102,12 +109,15 @@ class ClientThread_A implements Runnable {
                         jsonToSend.put("name", clientName);
                         jsonToSend.put("color", myColor);
                         jsonToSend.put("isEnd", isEnd);
+
                         System.out.println("[log] 本次发送的消息：" + jsonToSend);
+                        ms.sendMessage("[log] 本次发送的消息：" + jsonToSend + "\n");
+
                         PrintStream ps = new PrintStream(s.getOutputStream());
                         ps.println(jsonToSend);
 
                         if (isEnd) {
-                            System.exit(0);
+                            break;
                         }
 
                     }
@@ -121,9 +131,9 @@ class ClientThread_A implements Runnable {
     }
 }
 
-public class Client_A {
+public class Client_A implements ClientThread_A.MessageTrans {
     private static final int SERVER_PORT = 60000;
-    public static String clientName;
+    static String clientName;
 
     @FXML
     TextArea logContent;
@@ -139,7 +149,11 @@ public class Client_A {
         clientName = name.getText();
 
         Socket s = new Socket(serverIP.getText(), SERVER_PORT);
-        new Thread(new ClientThread_A(s)).start();
+        new Thread(new ClientThread_A(s, this)).start();
     }
 
+    @Override
+    public void sendMessage(String message) {
+        logContent.appendText(message);
+    }
 }

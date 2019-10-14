@@ -23,8 +23,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
-import static java.lang.Thread.sleep;
+import static com.go.server.Server.*;
+
 
 /**
  * Server
@@ -51,12 +53,13 @@ class ServerThread implements Runnable {
     @Override
     public void run() {
         try {
-            // 开局时发送 Start 信号
+            // 开局时发送 Start 信号 以及 先手玩家姓名
             if (Server.rounds == 0 && Server.sockets.size() == 2) {
                 Server.rounds++;
                 for (Socket socket : Server.sockets) {
                     PrintStream ps = new PrintStream(socket.getOutputStream());
                     ps.println("Start");
+                    ps.println(prePlayer);
                 }
 
             }
@@ -72,6 +75,8 @@ class ServerThread implements Runnable {
                 String name = jsonObject.getString("name");
                 int color = jsonObject.getIntValue("color");
                 boolean isEnd = jsonObject.getBooleanValue("isEnd");
+
+                messageTrans.sendMessage("[log] " + name + " 落子于(" + x + ", " + y + ")\n");
 
 
                 // 解析内容后落子
@@ -104,7 +109,7 @@ class ServerThread implements Runnable {
                 // 游戏结束
                 if (isEnd) {
                     System.out.println("Game Over! " + name + " Wins");
-                    messageTrans.sendMessage("Game Over! " + name + " Wins\n");
+                    messageTrans.sendMessage("[log] Game Over! " + name + " 胜利\n");
                 }
 
                 // 将消息分发给玩家
@@ -159,6 +164,9 @@ public class Server implements ServerThread.MessageTrans {
     private String[] markX = new String[]{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O"};
     private String[] markY = new String[]{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"};
 
+    HashMap<Socket, String> map = new HashMap<>();
+    public static String prePlayer = "";
+
     public void initialize() {
         btnStart.setDisable(true);
         gc = canvas.getGraphicsContext2D();
@@ -204,22 +212,30 @@ public class Server implements ServerThread.MessageTrans {
                 Socket s = null;
                 try {
                     s = serverSocket.accept();
+                    BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
+                    String curName = br.readLine();
+                    sockets.add(s);
+                    map.put(s, curName);
+                    taContent.appendText("[log] " + curName + "上线\n");
+                    clientNum.setText("当前在线AI数目：" + sockets.size());
+                    if (sockets.size() == 2) break;
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                sockets.add(s);
-                clientNum.setText("当前在线AI数目：" + sockets.size());
-                if (sockets.size() == 2) break;
             }
-            taContent.appendText("已建立连接\n");
+            taContent.appendText("[log] 已建立连接\n");
             btnStart.setDisable(false);
         }).start();
     }
 
     @FXML
     protected void handleStartServer(ActionEvent event) throws IOException {
+        taContent.appendText("[log] 开始博弈\n");
+        int rand = Math.random() > 0.5 ? 1 : 0;
+        Socket s = sockets.get(rand);
+        prePlayer = map.get(s);
+        taContent.appendText("[log] " + prePlayer + "先手执黑\n");
         btnStart.setDisable(true);
-        taContent.appendText("开始博弈\n");
         for (Socket socket : sockets) {
             new Thread(new ServerThread(socket, this)).start();
         }

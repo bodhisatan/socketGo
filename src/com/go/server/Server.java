@@ -64,14 +64,16 @@ class ServerThread implements Runnable {
     public void run() {
         try {
             // 开局时发送 Start 信号 以及 先手玩家姓名
-            if (Server.rounds == 0 && socketPool.size() == 2) {
-                Server.rounds++;
-                for (Socket socket : socketPool) {
-                    PrintStream ps = new PrintStream(socket.getOutputStream());
-                    ps.println("Start");
-                    ps.println(prePlayer);
-                }
+            synchronized (this) {
+                if (Server.rounds == 0 && socketPool.size() == 2) {
+                    Server.rounds++;
+                    for (Socket socket : socketPool) {
+                        PrintStream ps = new PrintStream(socket.getOutputStream());
+                        ps.println("Start");
+                        ps.println(prePlayer);
+                    }
 
+                }
             }
 
             String content = null; // 客户端发来的内容

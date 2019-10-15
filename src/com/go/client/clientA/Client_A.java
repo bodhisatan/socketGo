@@ -57,7 +57,8 @@ class ClientThread_A implements Runnable {
                 ms.sendMessage("[log] 本次接收到的消息：" + content + "\n");
 
                 if (content.equals("Start")) {
-
+                    // 初始化棋盘
+                    chessBoard = new ChessBoard();
                     // 假如自己是先手
                     String prePlayer = br.readLine();
                     if (clientName.equals(prePlayer)) {
@@ -93,7 +94,6 @@ class ClientThread_A implements Runnable {
                         chessBoard.makeMove(x, y, color);
 
                         if (isEnd) {
-                            chessBoard = new ChessBoard();
                             System.out.println("[log] 本次发送的消息：" + content);
                             ms.sendMessage("[log] 本次发送的消息：" + content + "\n");
                             PrintStream ps = new PrintStream(s.getOutputStream());

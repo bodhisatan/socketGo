@@ -1,7 +1,6 @@
-package com.go.server;
+package com.go.client.clientC;
 
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -14,13 +13,14 @@ public class Main extends Application implements EventHandler<WindowEvent> {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("UI/server.fxml"));
-        primaryStage.setTitle("五子棋AI博弈主控");
-        primaryStage.setScene(new Scene(root, 800, 520));
+        Parent root = FXMLLoader.load(getClass().getResource("client.fxml"));
+        primaryStage.setTitle("五子棋AI三号");
+        primaryStage.setScene(new Scene(root, 400, 520));
         primaryStage.setResizable(true);
         primaryStage.show();
-        primaryStage.setOnCloseRequest(event -> Platform.exit());
+        primaryStage.setOnCloseRequest(this);
     }
+
 
     public static void main(String[] args) {
         launch(args);

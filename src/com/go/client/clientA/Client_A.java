@@ -27,14 +27,12 @@ class ClientThread_A implements Runnable {
     private Robot robot;
     private Socket s;
     private BufferedReader br = null;
-    private boolean flag;
     private int myColor;
     private MessageTrans ms;
 
     ClientThread_A(Socket s, MessageTrans messageTrans) throws IOException {
         this.s = s;
         br = new BufferedReader(new InputStreamReader(s.getInputStream()));
-        flag = true;
         ms = messageTrans;
     }
 
@@ -45,14 +43,13 @@ class ClientThread_A implements Runnable {
 
     @Override
     public void run() {
-        if (flag) {
-            try {
-                PrintStream ps = new PrintStream(s.getOutputStream());
-                ps.println(clientName);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        try {
+            PrintStream ps = new PrintStream(s.getOutputStream());
+            ps.println(clientName);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
         String content = null;
         try {
             while ((content = br.readLine()) != null) {
@@ -93,31 +90,32 @@ class ClientThread_A implements Runnable {
                         int y = jsonFromServer.getIntValue("y");
                         boolean isEnd = jsonFromServer.getBooleanValue("isEnd");
 
-                        if (isEnd) {
-                            break;
-                        }
-
                         chessBoard.makeMove(x, y, color);
 
-                        int rob[] = robot.getNext(myColor);
-                        chessBoard.makeMove(rob[0], rob[1], myColor);
-                        int rel = chessBoard.isEnd(rob[0], rob[1], myColor);
-                        if (rel != 0) isEnd = true;
-                        JSONObject jsonToSend = new JSONObject();
-                        jsonToSend.put("x", rob[0]);
-                        jsonToSend.put("y", rob[1]);
-                        jsonToSend.put("name", clientName);
-                        jsonToSend.put("color", myColor);
-                        jsonToSend.put("isEnd", isEnd);
-
-                        System.out.println("[log] 本次发送的消息：" + jsonToSend);
-                        ms.sendMessage("[log] 本次发送的消息：" + jsonToSend + "\n");
-
-                        PrintStream ps = new PrintStream(s.getOutputStream());
-                        ps.println(jsonToSend);
-
                         if (isEnd) {
-                            break;
+                            chessBoard = new ChessBoard();
+                            System.out.println("[log] 本次发送的消息：" + content);
+                            ms.sendMessage("[log] 本次发送的消息：" + content + "\n");
+                            PrintStream ps = new PrintStream(s.getOutputStream());
+                            ps.println(content);
+                        } else {
+                            int rob[] = robot.getNext(myColor);
+                            chessBoard.makeMove(rob[0], rob[1], myColor);
+                            int rel = chessBoard.isEnd(rob[0], rob[1], myColor);
+                            if (rel != 0) isEnd = true;
+                            JSONObject jsonToSend = new JSONObject();
+                            jsonToSend.put("x", rob[0]);
+                            jsonToSend.put("y", rob[1]);
+                            jsonToSend.put("name", clientName);
+                            jsonToSend.put("color", myColor);
+                            jsonToSend.put("isEnd", isEnd);
+
+                            System.out.println("[log] 本次发送的消息：" + jsonToSend);
+                            ms.sendMessage("[log] 本次发送的消息：" + jsonToSend + "\n");
+
+                            PrintStream ps = new PrintStream(s.getOutputStream());
+                            ps.println(jsonToSend);
+
                         }
 
                     }

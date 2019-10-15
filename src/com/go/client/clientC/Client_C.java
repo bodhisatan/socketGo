@@ -1,4 +1,4 @@
-package com.go.client.clientB;
+package com.go.client.clientC;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -16,13 +16,13 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.Socket;
 
-import static com.go.client.clientB.Client_B.*;
+import static com.go.client.clientC.Client_C.*;
 
 /**
  * Client
  */
 
-class ClientThread_B implements Runnable {
+class ClientThread_C implements Runnable {
     private ChessBoard chessBoard = new ChessBoard();
     private Robot robot;
     private Socket s;
@@ -30,7 +30,7 @@ class ClientThread_B implements Runnable {
     private int myColor;
     private MessageTrans ms;
 
-    ClientThread_B(Socket s, MessageTrans messageTrans) throws IOException {
+    ClientThread_C(Socket s, MessageTrans messageTrans) throws IOException {
         this.s = s;
         br = new BufferedReader(new InputStreamReader(s.getInputStream()));
         ms = messageTrans;
@@ -91,6 +91,7 @@ class ClientThread_B implements Runnable {
                         boolean isEnd = jsonFromServer.getBooleanValue("isEnd");
 
                         chessBoard.makeMove(x, y, color);
+
                         if (isEnd) {
                             chessBoard = new ChessBoard();
                             System.out.println("[log] 本次发送的消息：" + content);
@@ -98,7 +99,6 @@ class ClientThread_B implements Runnable {
                             PrintStream ps = new PrintStream(s.getOutputStream());
                             ps.println(content);
                         } else {
-
                             int rob[] = robot.getNext(myColor);
                             chessBoard.makeMove(rob[0], rob[1], myColor);
                             int rel = chessBoard.isEnd(rob[0], rob[1], myColor);
@@ -109,10 +109,13 @@ class ClientThread_B implements Runnable {
                             jsonToSend.put("name", clientName);
                             jsonToSend.put("color", myColor);
                             jsonToSend.put("isEnd", isEnd);
+
                             System.out.println("[log] 本次发送的消息：" + jsonToSend);
                             ms.sendMessage("[log] 本次发送的消息：" + jsonToSend + "\n");
+
                             PrintStream ps = new PrintStream(s.getOutputStream());
                             ps.println(jsonToSend);
+
                         }
 
                     }
@@ -126,7 +129,7 @@ class ClientThread_B implements Runnable {
     }
 }
 
-public class Client_B implements ClientThread_B.MessageTrans {
+public class Client_C implements ClientThread_C.MessageTrans {
     private static final int SERVER_PORT = 60000;
     static String clientName;
 
@@ -144,7 +147,7 @@ public class Client_B implements ClientThread_B.MessageTrans {
         clientName = name.getText();
 
         Socket s = new Socket(serverIP.getText(), SERVER_PORT);
-        new Thread(new ClientThread_B(s, this)).start();
+        new Thread(new ClientThread_C(s, this)).start();
     }
 
     @Override

@@ -49,17 +49,18 @@ public class AI {
                         threat = tmp[0];// 更新最大威胁值
                         x = tmp[1];// 更新落子横坐标
                         y = tmp[2];// 更新落子纵坐标
-                        return new int[]{x, y};// 返回横纵坐标组成的一维数组
                     }
                 }
             }
         }
         // 原算法存在x,y可能不被赋值的bug, 故加以下语句
-        for (int i = 0; i < 15; i++) {// 遍历棋盘行
-            for (int j = 0; j < 15; j++) {// 遍历棋盘列
-                if (chessmanArray[i][j] == 0) { // 此处无棋子
-                    x = i;
-                    y = j;
+        if (x == -1 || y == -1) {
+            for (int i = 0; i < 15; i++) {// 遍历棋盘行
+                for (int j = 0; j < 15; j++) {// 遍历棋盘列
+                    if (chessmanArray[i][j] == 0) { // 此处无棋子
+                        x = i;
+                        y = j;
+                    }
                 }
             }
         }
@@ -174,7 +175,7 @@ public class AI {
         int score = 0;// 记录最大评分
         StringBuffer sb = new StringBuffer();// 准备将棋型数组保存为字符串的StringBuffer
         for (int num : model) {// 遍历数组，将数组变成字符串
-            if (num == myColor) {// 如果是自己棋子
+            if (num == BLACK_CHESSMAN) {// 如果是黑棋
                 num = 4;// 改为其他数字，以免负号会占字符
             }
             sb.append(num);// 字符串添加此数字

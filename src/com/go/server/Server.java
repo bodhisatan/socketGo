@@ -62,9 +62,10 @@ class ServerThread implements Runnable {
 
     @Override
     public void run() {
-        // 加锁 确保不会线程冲突
-        synchronized (this) {
-            try {
+
+        try {
+            // 加锁 确保不会线程冲突
+            synchronized (this) {
                 // 开局时发送 Start 信号 以及 先手玩家姓名
                 if (Server.rounds == 0 && socketPool.size() == 2) {
                     Server.rounds++;
@@ -76,78 +77,79 @@ class ServerThread implements Runnable {
                     }
 
                 }
-
-
-                String content = null; // 客户端发来的内容
-                while ((content = readFromClient()) != null && content.length() > 0) {
-                    System.out.println("[log] 客户端发来内容：" + content);
-
-                    // 解析内容
-                    JSONObject jsonObject = JSON.parseObject(content);
-                    int x = jsonObject.getIntValue("x");
-                    int y = jsonObject.getIntValue("y");
-                    String name = jsonObject.getString("name");
-                    int color = jsonObject.getIntValue("color");
-                    boolean isEnd = jsonObject.getBooleanValue("isEnd");
-
-                    if (isEnd && !name.equals(map.get(s))) {
-                        String curName = map.get(s);
-                        int loseNum = nameToLose.get(curName);
-                        loseNum++;
-                        nameToLose.put(curName, loseNum);
-                        countDownLatch.countDown();
-                        break;
-                    }
-
-                    messageTrans.sendMessage("[log] " + name + " 落子于(" + x + ", " + y + ")\n");
-
-
-                    // 解析内容后落子
-                    Server.chessBoard.makeMove(x, y, color);
-
-                    int roundNum = (Server.rounds + 1) / 2;
-                    System.out.println("ROUND " + roundNum + ": ");
-                    Server.rounds++;
-
-                    // 打印棋盘
-                    for (int i = 1; i <= ChessBoard.N; i++) {
-                        System.out.print("|");
-                        for (int j = 1; j <= ChessBoard.N; j++) {
-                            if (Server.chessBoard.getColor(i, j) == ChessBoard.EMPTY) {
-                                System.out.print(" |");
-                            } else if (Server.chessBoard.getColor(i, j) == ChessBoard.BLACK) {
-                                System.out.print("O|");
-                            } else if (Server.chessBoard.getColor(i, j) == ChessBoard.WHITE) {
-                                System.out.print("X|");
-                            }
-                        }
-                        System.out.println();
-                    }
-
-                    messageTrans.drawChess(color, x, y);
-
-                    // 将消息分发给玩家
-                    for (Socket socket : socketPool) {
-                        PrintStream ps = new PrintStream(socket.getOutputStream());
-                        ps.println(content);
-                        ps.flush();
-                    }
-
-                    // 游戏结束
-                    if (isEnd) {
-                        int winNum = nameToWin.get(name);
-                        winNum++;
-                        nameToWin.put(name, winNum);
-                        System.out.println("Game Over! " + name + " Wins");
-                        messageTrans.sendMessage("[log] Game Over! " + name + " 胜利\n");
-                        countDownLatch.countDown();
-                        break;
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
+
+
+            String content = null; // 客户端发来的内容
+            while ((content = readFromClient()) != null && content.length() > 0) {
+                System.out.println("[log] 客户端发来内容：" + content);
+
+                // 解析内容
+                JSONObject jsonObject = JSON.parseObject(content);
+                int x = jsonObject.getIntValue("x");
+                int y = jsonObject.getIntValue("y");
+                String name = jsonObject.getString("name");
+                int color = jsonObject.getIntValue("color");
+                boolean isEnd = jsonObject.getBooleanValue("isEnd");
+
+                if (isEnd && !name.equals(map.get(s))) {
+                    String curName = map.get(s);
+                    int loseNum = nameToLose.get(curName);
+                    loseNum++;
+                    nameToLose.put(curName, loseNum);
+                    countDownLatch.countDown();
+                    break;
+                }
+
+                messageTrans.sendMessage("[log] " + name + " 落子于(" + x + ", " + y + ")\n");
+
+
+                // 解析内容后落子
+                Server.chessBoard.makeMove(x, y, color);
+
+                int roundNum = (Server.rounds + 1) / 2;
+                System.out.println("ROUND " + roundNum + ": ");
+                Server.rounds++;
+
+                // 打印棋盘
+                for (int i = 1; i <= ChessBoard.N; i++) {
+                    System.out.print("|");
+                    for (int j = 1; j <= ChessBoard.N; j++) {
+                        if (Server.chessBoard.getColor(i, j) == ChessBoard.EMPTY) {
+                            System.out.print(" |");
+                        } else if (Server.chessBoard.getColor(i, j) == ChessBoard.BLACK) {
+                            System.out.print("O|");
+                        } else if (Server.chessBoard.getColor(i, j) == ChessBoard.WHITE) {
+                            System.out.print("X|");
+                        }
+                    }
+                    System.out.println();
+                }
+
+                messageTrans.drawChess(color, x, y);
+
+                // 将消息分发给玩家
+                for (Socket socket : socketPool) {
+                    PrintStream ps = new PrintStream(socket.getOutputStream());
+                    ps.println(content);
+                    ps.flush();
+                }
+
+                // 游戏结束
+                if (isEnd) {
+                    int winNum = nameToWin.get(name);
+                    winNum++;
+                    nameToWin.put(name, winNum);
+                    System.out.println("Game Over! " + name + " Wins");
+                    messageTrans.sendMessage("[log] Game Over! " + name + " 胜利\n");
+                    countDownLatch.countDown();
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
     }
 
     public String readFromClient() {

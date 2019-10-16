@@ -12,12 +12,13 @@ import java.util.Arrays;
 public class AI {
 
     private static final int boundary = 8;// 棋盘边界值常量，用于捕捉棋型时填充边界
-    private static byte[][] chessmanArray = new byte[15][15]; // 定义棋子数组
+    private static byte[][] chessmanArray; // 定义棋子数组
     private final static byte WHITE_CHESSMAN = 1;// 白棋的值
     private final static byte BLACK_CHESSMAN = -1;// 黑棋的值
     private static byte myColor;
 
     public AI(int color) {
+        chessmanArray = new byte[15][15];
         if (color == ChessBoard.BLACK) {
             myColor = BLACK_CHESSMAN;
         } else {

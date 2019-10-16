@@ -62,83 +62,91 @@ class ServerThread implements Runnable {
 
     @Override
     public void run() {
-        try {
-            // 开局时发送 Start 信号 以及 先手玩家姓名
-            synchronized (this) {
+        // 加锁 确保不会线程冲突
+        synchronized (this) {
+            try {
+                // 开局时发送 Start 信号 以及 先手玩家姓名
                 if (Server.rounds == 0 && socketPool.size() == 2) {
                     Server.rounds++;
                     for (Socket socket : socketPool) {
                         PrintStream ps = new PrintStream(socket.getOutputStream());
                         ps.println("Start");
                         ps.println(prePlayer);
+                        ps.flush();
                     }
 
                 }
-            }
-
-            String content = null; // 客户端发来的内容
-            while ((content = readFromClient()) != null) {
-                System.out.println("[log] 客户端发来内容：" + content);
-
-                // 解析内容
-                JSONObject jsonObject = JSON.parseObject(content);
-                int x = jsonObject.getIntValue("x");
-                int y = jsonObject.getIntValue("y");
-                String name = jsonObject.getString("name");
-                int color = jsonObject.getIntValue("color");
-                boolean isEnd = jsonObject.getBooleanValue("isEnd");
-
-                if (isEnd && !name.equals(map.get(s))) {
-                    countDownLatch.countDown();
-                    break;
-                }
-
-                messageTrans.sendMessage("[log] " + name + " 落子于(" + x + ", " + y + ")\n");
 
 
-                // 解析内容后落子
-                Server.chessBoard.makeMove(x, y, color);
+                String content = null; // 客户端发来的内容
+                while ((content = readFromClient()) != null && content.length() > 0) {
+                    System.out.println("[log] 客户端发来内容：" + content);
 
-                int roundNum = (Server.rounds + 1) / 2;
-                System.out.println("ROUND " + roundNum + ": ");
-                Server.rounds++;
+                    // 解析内容
+                    JSONObject jsonObject = JSON.parseObject(content);
+                    int x = jsonObject.getIntValue("x");
+                    int y = jsonObject.getIntValue("y");
+                    String name = jsonObject.getString("name");
+                    int color = jsonObject.getIntValue("color");
+                    boolean isEnd = jsonObject.getBooleanValue("isEnd");
 
-                // 打印棋盘
-                for (int i = 1; i <= ChessBoard.N; i++) {
-                    System.out.print("|");
-                    for (int j = 1; j <= ChessBoard.N; j++) {
-                        if (Server.chessBoard.getColor(i, j) == ChessBoard.EMPTY) {
-                            System.out.print(" |");
-                        } else if (Server.chessBoard.getColor(i, j) == ChessBoard.BLACK) {
-                            System.out.print("O|");
-                        } else if (Server.chessBoard.getColor(i, j) == ChessBoard.WHITE) {
-                            System.out.print("X|");
+                    if (isEnd && !name.equals(map.get(s))) {
+                        String curName = map.get(s);
+                        int loseNum = nameToLose.get(curName);
+                        loseNum++;
+                        nameToLose.put(curName, loseNum);
+                        countDownLatch.countDown();
+                        break;
+                    }
+
+                    messageTrans.sendMessage("[log] " + name + " 落子于(" + x + ", " + y + ")\n");
+
+
+                    // 解析内容后落子
+                    Server.chessBoard.makeMove(x, y, color);
+
+                    int roundNum = (Server.rounds + 1) / 2;
+                    System.out.println("ROUND " + roundNum + ": ");
+                    Server.rounds++;
+
+                    // 打印棋盘
+                    for (int i = 1; i <= ChessBoard.N; i++) {
+                        System.out.print("|");
+                        for (int j = 1; j <= ChessBoard.N; j++) {
+                            if (Server.chessBoard.getColor(i, j) == ChessBoard.EMPTY) {
+                                System.out.print(" |");
+                            } else if (Server.chessBoard.getColor(i, j) == ChessBoard.BLACK) {
+                                System.out.print("O|");
+                            } else if (Server.chessBoard.getColor(i, j) == ChessBoard.WHITE) {
+                                System.out.print("X|");
+                            }
                         }
+                        System.out.println();
                     }
-                    System.out.println();
-                }
 
-                messageTrans.drawChess(color, x, y);
+                    messageTrans.drawChess(color, x, y);
 
-                // 将消息分发给玩家
-                for (Socket socket : socketPool) {
-                    PrintStream ps = new PrintStream(socket.getOutputStream());
-                    ps.println(content);
-                }
+                    // 将消息分发给玩家
+                    for (Socket socket : socketPool) {
+                        PrintStream ps = new PrintStream(socket.getOutputStream());
+                        ps.println(content);
+                        ps.flush();
+                    }
 
-                // 游戏结束
-                if (isEnd) {
-                    int _score = score.get(name);
-                    _score++;
-                    score.put(name, _score);
-                    System.out.println("Game Over! " + name + " Wins");
-                    messageTrans.sendMessage("[log] Game Over! " + name + " 胜利\n");
-                    countDownLatch.countDown();
-                    break;
+                    // 游戏结束
+                    if (isEnd) {
+                        int winNum = nameToWin.get(name);
+                        winNum++;
+                        nameToWin.put(name, winNum);
+                        System.out.println("Game Over! " + name + " Wins");
+                        messageTrans.sendMessage("[log] Game Over! " + name + " 胜利\n");
+                        countDownLatch.countDown();
+                        break;
+                    }
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -160,7 +168,8 @@ public class Server implements ServerThread.MessageTrans {
     private ArrayList<Socket> sockets = new ArrayList<Socket>();
     public static ArrayList<Socket> socketPool = new ArrayList<>();
     public static int rounds = 0;
-    public static HashMap<String, Integer> score = new HashMap<>();
+    public static HashMap<String, Integer> nameToWin = new HashMap<>();
+    public static HashMap<String, Integer> nameToLose = new HashMap<>();
 
     @FXML
     Canvas canvas;
@@ -237,7 +246,8 @@ public class Server implements ServerThread.MessageTrans {
                     String curName = br.readLine();
                     sockets.add(s);
                     map.put(s, curName);
-                    score.put(curName, 0);
+                    nameToLose.put(curName, 0);
+                    nameToWin.put(curName, 0);
                     taContent.appendText("[log] " + curName + "上线\n");
                     clientNum.setText("当前在线AI数目：" + sockets.size());
                     if (sockets.size() == 3) break;
@@ -253,11 +263,12 @@ public class Server implements ServerThread.MessageTrans {
     @FXML
     protected void handleStartServer(ActionEvent event) throws Exception {
         taContent.appendText("[log] 开始博弈\n");
-        btnStart.setDisable(true);
 
         new Thread(() -> {
             try {
                 final CountDownLatch latch = new CountDownLatch(2);
+
+                clean();
 
                 taContent.appendText("[log] 第一场  " + map.get(sockets.get(0)) + " VS " + map.get(sockets.get(1)) + "\n");
                 socketPool.add(sockets.get(0));
@@ -319,9 +330,9 @@ public class Server implements ServerThread.MessageTrans {
     protected void handleWatchScore(ActionEvent event) {
         Stage secondStage = new Stage();
         secondStage.setTitle("战绩统计");
-        Label label1 = new Label(map.get(sockets.get(0)) + " 胜：" + score.get(map.get(sockets.get(0))) + " 负：" + (2 - score.get(map.get(sockets.get(0)))));
-        Label label2 = new Label(map.get(sockets.get(1)) + " 胜：" + score.get(map.get(sockets.get(1))) + " 负：" + (2 - score.get(map.get(sockets.get(1)))));
-        Label label3 = new Label(map.get(sockets.get(2)) + " 胜：" + score.get(map.get(sockets.get(2))) + " 负：" + (2 - score.get(map.get(sockets.get(2)))));
+        Label label1 = new Label(map.get(sockets.get(0)) + " 胜：" + nameToWin.get(map.get(sockets.get(0))) + " 负：" + nameToLose.get(map.get(sockets.get(0))));
+        Label label2 = new Label(map.get(sockets.get(1)) + " 胜：" + nameToWin.get(map.get(sockets.get(1))) + " 负：" + nameToLose.get(map.get(sockets.get(1))));
+        Label label3 = new Label(map.get(sockets.get(2)) + " 胜：" + nameToWin.get(map.get(sockets.get(2))) + " 负：" + nameToLose.get(map.get(sockets.get(2))));
         VBox pane = new VBox(10);
         pane.getChildren().addAll(label1, label2, label3);
         pane.setAlignment(Pos.CENTER);

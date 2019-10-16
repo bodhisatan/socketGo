@@ -46,6 +46,7 @@ class ClientThread_B implements Runnable {
         try {
             PrintStream ps = new PrintStream(s.getOutputStream());
             ps.println(clientName);
+            ps.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -77,6 +78,7 @@ class ClientThread_B implements Runnable {
                         System.out.println("[log] 本次发送的消息：" + jsonObject);
                         ms.sendMessage("[log] 本次发送的消息：" + jsonObject + "\n");
                         ps.println(jsonObject);
+                        ps.flush();
 
                     } else {
                         robot = new Robot(ChessBoard.WHITE, chessBoard);
@@ -98,6 +100,7 @@ class ClientThread_B implements Runnable {
                             ms.sendMessage("[log] 本次发送的消息：" + content + "\n");
                             PrintStream ps = new PrintStream(s.getOutputStream());
                             ps.println(content);
+                            ps.flush();
                         } else {
 
                             int rob[] = robot.getNext(myColor);
@@ -114,6 +117,7 @@ class ClientThread_B implements Runnable {
                             ms.sendMessage("[log] 本次发送的消息：" + jsonToSend + "\n");
                             PrintStream ps = new PrintStream(s.getOutputStream());
                             ps.println(jsonToSend);
+                            ps.flush();
                         }
 
                     }
@@ -142,6 +146,7 @@ public class Client_B implements ClientThread_B.MessageTrans {
 
     @FXML
     protected void handleConnectClicked(ActionEvent event) throws IOException {
+        btnConnect.setDisable(true);
         clientName = name.getText();
 
         Socket s = new Socket(serverIP.getText(), SERVER_PORT);

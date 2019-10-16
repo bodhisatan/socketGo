@@ -268,7 +268,7 @@ public class Server implements ServerThread.MessageTrans {
 
         new Thread(() -> {
             try {
-                final CountDownLatch latch = new CountDownLatch(2);
+                CountDownLatch latch = new CountDownLatch(2);
 
                 clean();
 
@@ -284,8 +284,11 @@ public class Server implements ServerThread.MessageTrans {
                 }
 
                 latch.await();
-                sleep(5000);
+                sleep(3000);
                 clean();
+
+                // 重置计数器
+                latch = new CountDownLatch(2);
 
                 taContent.appendText("[log] 第二场  " + map.get(sockets.get(0)) + " VS " + map.get(sockets.get(2)) + "\n");
                 socketPool.add(sockets.get(0));
@@ -299,7 +302,7 @@ public class Server implements ServerThread.MessageTrans {
                 }
 
                 latch.await();
-                sleep(5000);
+                sleep(3000);
                 clean();
 
                 taContent.appendText("[log] 第三场  " + map.get(sockets.get(1)) + " VS " + map.get(sockets.get(2)) + "\n");

@@ -17,6 +17,7 @@ import java.io.PrintStream;
 import java.net.Socket;
 
 import static com.go.client.clientA.Client_A.*;
+import static java.lang.Thread.sleep;
 
 /**
  * Client
@@ -116,6 +117,8 @@ class ClientThread_A implements Runnable {
                             System.out.println("[log] 本次发送的消息：" + jsonToSend);
                             ms.sendMessage("[log] 本次发送的消息：" + jsonToSend + "\n");
 
+                            sleep(500);
+
                             PrintStream ps = new PrintStream(s.getOutputStream());
                             ps.println(jsonToSend);
                             ps.flush();
@@ -126,8 +129,7 @@ class ClientThread_A implements Runnable {
                 }
 
             }
-        } catch (
-                IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

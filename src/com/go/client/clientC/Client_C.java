@@ -2,8 +2,11 @@ package com.go.client.clientC;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.go.AI.AIForC;
+import com.go.util.Chess;
 import com.go.util.ChessBoard;
 import com.go.AI.Robot;
+import com.go.util.Record;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -17,18 +20,19 @@ import java.io.PrintStream;
 import java.net.Socket;
 
 import static com.go.client.clientC.Client_C.*;
+import static java.lang.Thread.sleep;
 
 /**
  * Client
  */
 
 class ClientThread_C implements Runnable {
-    private ChessBoard chessBoard = new ChessBoard();
-    private Robot robot;
     private Socket s;
     private BufferedReader br = null;
     private int myColor;
     private MessageTrans ms;
+    private AIForC aiForC;
+    private Chess[][] chessBoard;
 
     ClientThread_C(Socket s, MessageTrans messageTrans) throws IOException {
         this.s = s;
@@ -58,17 +62,16 @@ class ClientThread_C implements Runnable {
                 ms.sendMessage("[log] 本次接收到的消息：" + content + "\n");
 
                 if (content.equals("Start")) {
-                    // 初始化棋盘
-                    chessBoard = new ChessBoard();
+                    chessBoard = new Chess[15][15];
 
                     // 假如自己是先手
                     String prePlayer = br.readLine();
                     if (clientName.equals(prePlayer)) {
-                        robot = new Robot(ChessBoard.BLACK, chessBoard);
                         myColor = ChessBoard.BLACK;
+                        aiForC = new AIForC(myColor);
                         // 落第一步棋
                         PrintStream ps = new PrintStream(s.getOutputStream());
-                        chessBoard.makeMove(8, 8, myColor);
+                        chessBoard[8 - 1][8 - 1] = new Chess(myColor);
                         JSONObject jsonObject = new JSONObject();
                         jsonObject.put("name", clientName);
                         jsonObject.put("x", 8);
@@ -81,8 +84,8 @@ class ClientThread_C implements Runnable {
                         ps.flush();
 
                     } else {
-                        robot = new Robot(ChessBoard.WHITE, chessBoard);
                         myColor = ChessBoard.WHITE;
+                        aiForC = new AIForC(myColor);
                     }
 
                 } else {
@@ -94,7 +97,7 @@ class ClientThread_C implements Runnable {
                         int y = jsonFromServer.getIntValue("y");
                         boolean isEnd = jsonFromServer.getBooleanValue("isEnd");
 
-                        chessBoard.makeMove(x, y, color);
+                        chessBoard[x - 1][y - 1] = new Chess(color);
 
                         if (isEnd) {
                             System.out.println("[log] 本次发送的消息：" + content);
@@ -103,19 +106,21 @@ class ClientThread_C implements Runnable {
                             ps.println(content);
                             ps.flush();
                         } else {
-                            int rob[] = robot.getNext(myColor);
-                            chessBoard.makeMove(rob[0], rob[1], myColor);
-                            int rel = chessBoard.isEnd(rob[0], rob[1], myColor);
+                            Record record = aiForC.play(chessBoard, x - 1, y - 1);
+                            chessBoard[record.getI()][record.getJ()] = new Chess(myColor);
+                            int rel = aiForC.isEnd(chessBoard, record.getI(), record.getJ(), myColor);
                             if (rel != 0) isEnd = true;
                             JSONObject jsonToSend = new JSONObject();
-                            jsonToSend.put("x", rob[0]);
-                            jsonToSend.put("y", rob[1]);
+                            jsonToSend.put("x", record.getI() + 1);
+                            jsonToSend.put("y", record.getJ() + 1);
                             jsonToSend.put("name", clientName);
                             jsonToSend.put("color", myColor);
                             jsonToSend.put("isEnd", isEnd);
 
                             System.out.println("[log] 本次发送的消息：" + jsonToSend);
                             ms.sendMessage("[log] 本次发送的消息：" + jsonToSend + "\n");
+
+                            sleep(500);
 
                             PrintStream ps = new PrintStream(s.getOutputStream());
                             ps.println(jsonToSend);
@@ -127,8 +132,7 @@ class ClientThread_C implements Runnable {
                 }
 
             }
-        } catch (
-                IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

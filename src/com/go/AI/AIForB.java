@@ -9,7 +9,7 @@ import java.util.Arrays;
  *
  * @author shenxiaoqi
  */
-public class AI {
+public class AIForB {
 
     private static final int boundary = 8;// 棋盘边界值常量，用于捕捉棋型时填充边界
     private static byte[][] chessmanArray; // 定义棋子数组
@@ -17,7 +17,7 @@ public class AI {
     private final static byte BLACK_CHESSMAN = -1;// 黑棋的值
     private static byte myColor;
 
-    public AI(int color) {
+    public AIForB(int color) {
         chessmanArray = new byte[15][15];
         if (color == ChessBoard.BLACK) {
             myColor = BLACK_CHESSMAN;
@@ -46,7 +46,7 @@ public class AI {
             for (int j = 0; j < 15; j++) {// 遍历棋盘列
                 if (chessmanArray[i][j] != myColor) {// 如果此处有敌方棋子
                     int[] tmp = catchChessModle(i, j, chessmanArray);// 捕捉每个棋子形成的棋型
-                    if (tmp[0] > threat) {// 如果存在比当前最大威胁值还要大的威胁值，则记录此处落子坐标
+                    if (tmp[0] >= threat) {// 如果存在比当前最大威胁值还要大的威胁值，则记录此处落子坐标
                         threat = tmp[0];// 更新最大威胁值
                         x = tmp[1];// 更新落子横坐标
                         y = tmp[2];// 更新落子纵坐标

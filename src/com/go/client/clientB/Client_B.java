@@ -2,9 +2,8 @@ package com.go.client.clientB;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.go.AI.AI;
+import com.go.AI.AIForB;
 import com.go.util.ChessBoard;
-import com.go.AI.Robot;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -18,6 +17,7 @@ import java.io.PrintStream;
 import java.net.Socket;
 
 import static com.go.client.clientB.Client_B.*;
+import static java.lang.Thread.sleep;
 
 /**
  * Client
@@ -28,7 +28,7 @@ class ClientThread_B implements Runnable {
     private BufferedReader br = null;
     private int myColor;
     private MessageTrans ms;
-    private AI ai;
+    private AIForB aiForB;
     ClientThread_B(Socket s, MessageTrans messageTrans) throws IOException {
         this.s = s;
         br = new BufferedReader(new InputStreamReader(s.getInputStream()));
@@ -63,11 +63,11 @@ class ClientThread_B implements Runnable {
                     if (clientName.equals(prePlayer)) {
 
                         myColor = ChessBoard.BLACK;
-                        ai = new AI(myColor);
+                        aiForB = new AIForB(myColor);
 
                         // 落第一步棋
                         PrintStream ps = new PrintStream(s.getOutputStream());
-                        ai.place(8 - 1, 8 - 1, myColor);
+                        aiForB.place(8 - 1, 8 - 1, myColor);
                         JSONObject jsonObject = new JSONObject();
                         jsonObject.put("name", clientName);
                         jsonObject.put("x", 8);
@@ -80,7 +80,7 @@ class ClientThread_B implements Runnable {
                         ps.flush();
 
                     } else {
-                        ai = new AI(ChessBoard.WHITE);
+                        aiForB = new AIForB(ChessBoard.WHITE);
                         myColor = ChessBoard.WHITE;
                     }
 
@@ -93,7 +93,7 @@ class ClientThread_B implements Runnable {
                         int y = jsonFromServer.getIntValue("y");
                         boolean isEnd = jsonFromServer.getBooleanValue("isEnd");
 
-                        ai.place(x - 1, y - 1, color);
+                        aiForB.place(x - 1, y - 1, color);
                         if (isEnd) {
                             System.out.println("[log] 本次发送的消息：" + content);
                             ms.sendMessage("[log] 本次发送的消息：" + content + "\n");
@@ -102,9 +102,9 @@ class ClientThread_B implements Runnable {
                             ps.flush();
                         } else {
 
-                            int rob[] = ai.forEach();
-                            ai.place(rob[0], rob[1], myColor);
-                            int rel = ai.isEnd(rob[0], rob[1], myColor);
+                            int rob[] = aiForB.forEach();
+                            aiForB.place(rob[0], rob[1], myColor);
+                            int rel = aiForB.isEnd(rob[0], rob[1], myColor);
                             if (rel != 0) isEnd = true;
                             JSONObject jsonToSend = new JSONObject();
                             jsonToSend.put("x", rob[0] + 1);
@@ -114,6 +114,9 @@ class ClientThread_B implements Runnable {
                             jsonToSend.put("isEnd", isEnd);
                             System.out.println("[log] 本次发送的消息：" + jsonToSend);
                             ms.sendMessage("[log] 本次发送的消息：" + jsonToSend + "\n");
+
+                            sleep(500);
+
                             PrintStream ps = new PrintStream(s.getOutputStream());
                             ps.println(jsonToSend);
                             ps.flush();
@@ -123,8 +126,7 @@ class ClientThread_B implements Runnable {
                 }
 
             }
-        } catch (
-                IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

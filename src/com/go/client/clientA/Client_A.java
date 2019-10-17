@@ -3,7 +3,7 @@ package com.go.client.clientA;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.go.util.ChessBoard;
-import com.go.AI.Robot;
+import com.go.AI.AIForA;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -25,7 +25,7 @@ import static java.lang.Thread.sleep;
 
 class ClientThread_A implements Runnable {
     private ChessBoard chessBoard = new ChessBoard();
-    private Robot robot;
+    private AIForA AIForA;
     private Socket s;
     private BufferedReader br = null;
     private int myColor;
@@ -64,7 +64,7 @@ class ClientThread_A implements Runnable {
                     // 假如自己是先手
                     String prePlayer = br.readLine();
                     if (clientName.equals(prePlayer)) {
-                        robot = new Robot(ChessBoard.BLACK, chessBoard);
+                        AIForA = new AIForA(ChessBoard.BLACK, chessBoard);
                         myColor = ChessBoard.BLACK;
                         // 落第一步棋
                         PrintStream ps = new PrintStream(s.getOutputStream());
@@ -81,7 +81,7 @@ class ClientThread_A implements Runnable {
                         ps.flush();
 
                     } else {
-                        robot = new Robot(ChessBoard.WHITE, chessBoard);
+                        AIForA = new AIForA(ChessBoard.WHITE, chessBoard);
                         myColor = ChessBoard.WHITE;
                     }
 
@@ -103,7 +103,7 @@ class ClientThread_A implements Runnable {
                             ps.println(content);
                             ps.flush();
                         } else {
-                            int rob[] = robot.getNext(myColor);
+                            int rob[] = AIForA.getNext(myColor);
                             chessBoard.makeMove(rob[0], rob[1], myColor);
                             int rel = chessBoard.isEnd(rob[0], rob[1], myColor);
                             if (rel != 0) isEnd = true;

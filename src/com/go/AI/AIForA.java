@@ -4,13 +4,13 @@ import com.go.util.ChessBoard;
 
 import java.util.Random;
 
-public class Robot {
+public class AIForA {
 
     private static ChessBoard chess = null;
     private static int depth = 1;
     private static int robotColor;
 
-    public Robot(int color, ChessBoard chessBoard) {
+    public AIForA(int color, ChessBoard chessBoard) {
         robotColor = color;
         chess = chessBoard;
     }
@@ -111,7 +111,7 @@ public class Robot {
     /* alpha_beta剪枝搜索 */
     public int alpha_betaFind(int depth, int alpha, int beta, int color, int prex, int prey) {
 
-        if (depth >= Robot.depth || 0 != chess.isEnd(prex, prey, color % 2 + 1)) {
+        if (depth >= AIForA.depth || 0 != chess.isEnd(prex, prey, color % 2 + 1)) {
 
             int ans = reckon(robotColor) - reckon(robotColor % 2 + 1);
 

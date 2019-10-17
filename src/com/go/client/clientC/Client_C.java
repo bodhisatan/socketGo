@@ -5,7 +5,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.go.AI.AIForC;
 import com.go.util.Chess;
 import com.go.util.ChessBoard;
-import com.go.AI.Robot;
 import com.go.util.Record;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
